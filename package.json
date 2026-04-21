@@ -1,0 +1,14 @@
+{
+  "name": "library-book-catalog",
+  "version": "1.0.0",
+  "description": "Library Book Catalog - MERN Stack Application",
+  "scripts": {
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install",
+    "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm start\"",
+    "start": "cd server && npm start",
+    "seed": "cd server && npm run seed"
+  },
+  "devDependencies": {
+    "concurrently": "^8.0.1"
+  }
+}
