@@ -2,31 +2,51 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { booksAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 
-const Icon = ({ src, alt = '', size = 18, style = {} }) => (
-  <img src={src} alt={alt} width={size} height={size} style={{ display: 'inline-block', verticalAlign: 'middle', ...style }} />
-);
+const Icon = ({ src, alt = '', size = 18, style = {} }) => {
+  if (src && src.startsWith('http')) {
+    return <img src={src} alt={alt} width={size} height={size} style={{ display: 'inline-block', verticalAlign: 'middle', ...style }} />
+  }
+  return <i className={`fi ${src}`} style={{ fontSize: size, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, ...style }} title={alt}></i>
+};
 
 const ICONS = {
-  search:  'https://cdn-icons-png.flaticon.com/512/622/622669.png',
-  add:     'https://cdn-icons-png.flaticon.com/512/1077/1077114.png',
-  books:   'https://cdn-icons-png.flaticon.com/512/2232/2232688.png',
-  edit:    'https://cdn-icons-png.flaticon.com/512/1159/1159633.png',
-  trash:   'https://cdn-icons-png.flaticon.com/512/3221/3221800.png',
-  star:    'https://cdn-icons-png.flaticon.com/512/1828/1828884.png',
-  loading: 'https://cdn-icons-png.flaticon.com/512/1160/1160358.png',
+  search:  'fi-rr-search',
+  add:     'fi-rr-plus',
+  books:   'fi-rr-books',
+  edit:    'fi-rr-edit',
+  trash:   'fi-rr-trash',
+  star:    'fi-sr-star',
+  loading: 'fi-rr-spinner',
+  close:   'fi-rr-cross',
 };
 
 const CATEGORIES = ['Fiction','Non-Fiction','Science','Technology','History','Biography',
   'Self-Help','Business','Arts','Philosophy','Religion','Travel','Children','Comics','Education','Law','Medical','Other'];
 
-const BOOK_ICONS = { Fiction: 'https://cdn-icons-png.flaticon.com/512/2991/2991112.png', 'Non-Fiction': 'https://cdn-icons-png.flaticon.com/512/2232/2232688.png', Science: 'https://cdn-icons-png.flaticon.com/512/2103/2103651.png', Technology: 'https://cdn-icons-png.flaticon.com/512/3281/3281289.png',
-  History: 'https://cdn-icons-png.flaticon.com/512/854/854874.png', Biography: 'https://cdn-icons-png.flaticon.com/512/1077/1077063.png', 'Self-Help': 'https://cdn-icons-png.flaticon.com/512/3588/3588295.png', Business: 'https://cdn-icons-png.flaticon.com/512/2942/2942909.png', Arts: 'https://cdn-icons-png.flaticon.com/512/3321/3321752.png',
-  Philosophy: 'https://cdn-icons-png.flaticon.com/512/2919/2919600.png', Other: 'https://cdn-icons-png.flaticon.com/512/2232/2232688.png' };
+const BOOK_ICONS = { 
+  Fiction: 'fi-rr-book-alt', 'Non-Fiction': 'fi-rr-books', Science: 'fi-rr-microscope', Technology: 'fi-rr-laptop',
+  History: 'fi-rr-time-past', Biography: 'fi-rr-user', 'Self-Help': 'fi-rr-bulb', Business: 'fi-rr-briefcase', Arts: 'fi-rr-palette',
+  Philosophy: 'fi-rr-brain', Other: 'fi-rr-books' 
+};
+
+const extractImageUrl = (url) => {
+  try {
+    if (!url) return '';
+    if (url.includes('google.com/imgres')) {
+      const urlObj = new URL(url);
+      const imgurl = urlObj.searchParams.get('imgurl');
+      if (imgurl) return imgurl;
+    }
+    return url;
+  } catch (err) {
+    return url;
+  }
+};
 
 const emptyBook = {
   title: '', author: '', isbn: '', category: 'Fiction', description: '',
   publishedYear: '', publisher: '', language: 'English', pages: '',
-  totalCopies: 1, isFeatured: false, tags: ''
+  totalCopies: 1, isFeatured: false, tags: '', coverImage: ''
 };
 
 export default function AdminBooks() {
@@ -37,7 +57,6 @@ export default function AdminBooks() {
   const [showModal, setShowModal] = useState(false);
   const [editBook, setEditBook] = useState(null);
   const [form, setForm] = useState(emptyBook);
-  const [coverFile, setCoverFile] = useState(null);
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
@@ -54,7 +73,7 @@ export default function AdminBooks() {
 
   useEffect(() => { fetchBooks(); }, [fetchBooks]);
 
-  const openAdd = () => { setEditBook(null); setForm(emptyBook); setCoverFile(null); setShowModal(true); };
+  const openAdd = () => { setEditBook(null); setForm(emptyBook); setShowModal(true); };
   const openEdit = (book) => {
     setEditBook(book);
     setForm({
@@ -62,9 +81,8 @@ export default function AdminBooks() {
       description: book.description || '', publishedYear: book.publishedYear || '',
       publisher: book.publisher || '', language: book.language || 'English',
       pages: book.pages || '', totalCopies: book.totalCopies, isFeatured: book.isFeatured || false,
-      tags: (book.tags || []).join(', ')
+      tags: (book.tags || []).join(', '), coverImage: book.coverImage || ''
     });
-    setCoverFile(null);
     setShowModal(true);
   };
 
@@ -75,18 +93,16 @@ export default function AdminBooks() {
     }
     setSaving(true);
     try {
-      const fd = new FormData();
-      Object.entries(form).forEach(([k, v]) => {
-        if (k === 'tags') fd.append(k, v.split(',').map(t => t.trim()).filter(Boolean).join(','));
-        else fd.append(k, v);
-      });
-      if (coverFile) fd.append('cover', coverFile);
+      const payload = { ...form };
+      if (typeof form.tags === 'string') {
+        payload.tags = form.tags.split(',').map(t => t.trim()).filter(Boolean);
+      }
 
       if (editBook) {
-        await booksAPI.update(editBook._id, fd);
+        await booksAPI.update(editBook._id, payload);
         toast.success('Book updated successfully!');
       } else {
-        await booksAPI.create(fd);
+        await booksAPI.create(payload);
         toast.success('Book added successfully!');
       }
       setShowModal(false);
@@ -181,7 +197,7 @@ export default function AdminBooks() {
                           fontSize: 20, flexShrink: 0, overflow: 'hidden'
                         }}>
                           {book.coverImage
-                            ? <img src={`http://localhost:5000${book.coverImage}`} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ? <img src={book.coverImage.startsWith('http') ? book.coverImage : `http://localhost:5000${book.coverImage}`} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/150x220?text=No+Cover'; }} />
                             : <Icon src={BOOK_ICONS[book.category] || ICONS.books} alt={book.category} size={22} />}
                         </div>
                         <div>
@@ -230,7 +246,7 @@ export default function AdminBooks() {
           <div className="modal modal-lg">
             <div className="modal-header">
               <div className="modal-title">{editBook ? <><Icon src={ICONS.edit} alt="" size={16} style={{ marginRight: 6 }} />Edit Book</> : <><Icon src={ICONS.add} alt="" size={16} style={{ marginRight: 6 }} />Add New Book</>}</div>
-              <button className="modal-close" onClick={() => setShowModal(false)}>✕</button>
+              <button className="modal-close" onClick={() => setShowModal(false)}><Icon src={ICONS.close} alt="" size={16} /></button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
@@ -291,8 +307,8 @@ export default function AdminBooks() {
                   <textarea className="form-input form-textarea" placeholder="Book description..." value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Cover Image</label>
-                  <input className="form-input" type="file" accept="image/*" onChange={e => setCoverFile(e.target.files[0])} />
+                  <label className="form-label">Cover Image URL</label>
+                  <input className="form-input" type="url" placeholder="https://example.com/image.jpg" value={form.coverImage} onChange={e => setForm(f => ({ ...f, coverImage: extractImageUrl(e.target.value) }))} />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <input type="checkbox" id="featured" checked={form.isFeatured} onChange={e => setForm(f => ({ ...f, isFeatured: e.target.checked }))} />

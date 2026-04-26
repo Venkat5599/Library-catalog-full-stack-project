@@ -3,46 +3,51 @@ import { booksAPI, borrowsAPI, reviewsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
-const Icon = ({ src, alt = '', size = 18, style = {} }) => (
-  <img src={src} alt={alt} width={size} height={size} style={{ display: 'inline-block', verticalAlign: 'middle', ...style }} />
-);
+const Icon = ({ src, alt = '', size = 18, style = {} }) => {
+  if (src && src.startsWith('http')) {
+    return <img src={src} alt={alt} width={size} height={size} style={{ display: 'inline-block', verticalAlign: 'middle', ...style }} />
+  }
+  return <i className={`fi ${src}`} style={{ fontSize: size, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, ...style }} title={alt}></i>
+};
 
 const ICONS = {
-  search:  'https://cdn-icons-png.flaticon.com/512/622/622669.png',
-  books:   'https://cdn-icons-png.flaticon.com/512/2232/2232688.png',
-  book:    'https://cdn-icons-png.flaticon.com/512/2991/2991112.png',
-  star:    'https://cdn-icons-png.flaticon.com/512/1828/1828884.png',
-  borrow:  'https://cdn-icons-png.flaticon.com/512/2965/2965395.png',
-  isbn:    'https://cdn-icons-png.flaticon.com/512/1077/1077114.png',
-  year:    'https://cdn-icons-png.flaticon.com/512/747/747310.png',
-  pub:     'https://cdn-icons-png.flaticon.com/512/3143/3143437.png',
-  pages:   'https://cdn-icons-png.flaticon.com/512/2991/2991112.png',
-  lang:    'https://cdn-icons-png.flaticon.com/512/484/484633.png',
-  dl:      'https://cdn-icons-png.flaticon.com/512/2965/2965395.png',
+  search:  'fi-rr-search',
+  books:   'fi-rr-books',
+  book:    'fi-rr-book-alt',
+  star:    'fi-sr-star',
+  check:   'fi-rr-check-circle',
+  close:   'fi-rr-cross',
+  isbn:    'fi-rr-barcode-read',
+  year:    'fi-rr-calendar',
+  pub:     'fi-rr-building',
+  pages:   'fi-rr-document',
+  lang:    'fi-rr-language',
+  dl:      'fi-rr-download',
+  calendar:'fi-rr-calendar'
 };
 
 const CATEGORIES = ['All','Fiction','Non-Fiction','Science','Technology','History','Biography',
   'Self-Help','Business','Arts','Philosophy','Religion','Travel','Children','Comics','Education','Law','Medical','Other'];
 
 const BOOK_ICONS = {
-  Fiction:     'https://cdn-icons-png.flaticon.com/512/2991/2991112.png',
-  'Non-Fiction':'https://cdn-icons-png.flaticon.com/512/2232/2232688.png',
-  Science:      'https://cdn-icons-png.flaticon.com/512/2103/2103651.png',
-  Technology:   'https://cdn-icons-png.flaticon.com/512/3281/3281289.png',
-  History:      'https://cdn-icons-png.flaticon.com/512/854/854874.png',
-  Biography:    'https://cdn-icons-png.flaticon.com/512/1077/1077063.png',
-  'Self-Help':  'https://cdn-icons-png.flaticon.com/512/3588/3588295.png',
-  Business:     'https://cdn-icons-png.flaticon.com/512/2942/2942909.png',
-  Arts:         'https://cdn-icons-png.flaticon.com/512/3321/3321752.png',
-  Philosophy:   'https://cdn-icons-png.flaticon.com/512/2919/2919600.png',
-  Religion:     'https://cdn-icons-png.flaticon.com/512/1698/1698355.png',
-  Travel:       'https://cdn-icons-png.flaticon.com/512/201/201623.png',
-  Children:     'https://cdn-icons-png.flaticon.com/512/3048/3048122.png',
-  Comics:       'https://cdn-icons-png.flaticon.com/512/2583/2583347.png',
-  Education:    'https://cdn-icons-png.flaticon.com/512/3976/3976625.png',
-  Law:          'https://cdn-icons-png.flaticon.com/512/2107/2107845.png',
-  Medical:      'https://cdn-icons-png.flaticon.com/512/2382/2382461.png',
-  Other:        'https://cdn-icons-png.flaticon.com/512/2232/2232688.png',
+  Fiction:     'fi-rr-book-alt',
+  'Non-Fiction':'fi-rr-books',
+  Science:      'fi-rr-microscope',
+  Technology:   'fi-rr-laptop',
+  History:      'fi-rr-time-past',
+  Biography:    'fi-rr-user',
+  'Self-Help':  'fi-rr-bulb',
+  Business:     'fi-rr-briefcase',
+  Arts:         'fi-rr-palette',
+  Philosophy:   'fi-rr-brain',
+  Religion:     'fi-rr-pray',
+  Travel:       'fi-rr-plane-alt',
+  Children:     'fi-rr-child-head',
+  Comics:       'fi-rr-mask',
+  Education:    'fi-rr-graduation-cap',
+  Law:          'fi-rr-scale',
+  Medical:      'fi-rr-stethoscope',
+  Other:        'fi-rr-books',
 };
 
 export default function BookCatalogue() {
@@ -54,6 +59,7 @@ export default function BookCatalogue() {
   const [selectedBook, setSelectedBook] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
+  const [borrowingDays, setBorrowingDays] = useState(14);
   const [borrowing, setBorrowing] = useState(false);
   const [reviewLoading, setReviewLoading] = useState(false);
 
@@ -72,6 +78,7 @@ export default function BookCatalogue() {
 
   const openBook = async (book) => {
     setSelectedBook(book);
+    setBorrowingDays(14);
     setReviewForm({ rating: 5, comment: '' });
     try {
       const res = await reviewsAPI.getByBook(book._id);
@@ -82,8 +89,8 @@ export default function BookCatalogue() {
   const handleBorrow = async (bookId) => {
     setBorrowing(true);
     try {
-      await borrowsAPI.borrow(bookId);
-      toast.success('Book borrowed successfully! Due in 14 days 📚');
+      await borrowsAPI.borrow(bookId, borrowingDays);
+      toast.success(`Book borrowed successfully! Due in ${borrowingDays} days`);
       setSelectedBook(null);
       fetchBooks();
     } catch (err) {
@@ -179,11 +186,11 @@ export default function BookCatalogue() {
             <div key={book._id} className="book-card" onClick={() => openBook(book)}>
               <div className="book-cover">
                 {book.coverImage
-                  ? <img src={`http://localhost:5000${book.coverImage}`} alt={book.title} />
+                  ? <img src={book.coverImage.startsWith('http') ? book.coverImage : `http://localhost:5000${book.coverImage}`} alt={book.title} onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/150x220?text=No+Cover'; }} />
                   : <span className="book-cover-placeholder"><Icon src={BOOK_ICONS[book.category] || ICONS.books} alt={book.category} size={40} /></span>
                 }
                 <span className={`book-badge ${book.availableCopies === 0 ? 'unavailable' : ''}`}>
-                  {book.availableCopies > 0 ? `✓ ${book.availableCopies} left` : 'Unavailable'}
+                  {book.availableCopies > 0 ? <><Icon src={ICONS.check} alt="" size={14} style={{ marginRight: 4 }} />{book.availableCopies} left</> : 'Unavailable'}
                 </span>
               </div>
               <div className="book-info">
@@ -227,7 +234,7 @@ export default function BookCatalogue() {
           <div className="modal modal-lg">
             <div className="modal-header">
               <div className="modal-title"><Icon src={ICONS.books} alt="" size={18} style={{ marginRight: 6 }} />Book Details</div>
-              <button className="modal-close" onClick={() => setSelectedBook(null)}>✕</button>
+              <button className="modal-close" onClick={() => setSelectedBook(null)}><Icon src={ICONS.close} alt="" size={16} /></button>
             </div>
             <div className="modal-body">
               <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
@@ -238,7 +245,7 @@ export default function BookCatalogue() {
                   fontSize: 52, overflow: 'hidden'
                 }}>
                   {selectedBook.coverImage
-                      ? <img src={`http://localhost:5000${selectedBook.coverImage}`} alt={selectedBook.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ? <img src={selectedBook.coverImage.startsWith('http') ? selectedBook.coverImage : `http://localhost:5000${selectedBook.coverImage}`} alt={selectedBook.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/150x220?text=No+Cover'; }} />
                       : <Icon src={BOOK_ICONS[selectedBook.category] || ICONS.books} alt={selectedBook.category} size={52} />}
                 </div>
                 <div style={{ flex: 1 }}>
@@ -251,7 +258,7 @@ export default function BookCatalogue() {
                   <p style={{ color: '#64748b', marginBottom: 12 }}>by <strong>{selectedBook.author}</strong></p>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
                     <span className={`badge ${selectedBook.availableCopies > 0 ? 'badge-green' : 'badge-gray'}`}>
-                      {selectedBook.availableCopies > 0 ? `✓ ${selectedBook.availableCopies} copies available` : 'Not Available'}
+                      {selectedBook.availableCopies > 0 ? <><Icon src={ICONS.check} alt="" size={12} style={{ marginRight: 4 }} />{selectedBook.availableCopies} copies available</> : 'Not Available'}
                     </span>
                     <span className="badge badge-blue"><Icon src={ICONS.star} alt="" size={12} style={{ marginRight: 3 }} />{selectedBook.averageRating?.toFixed(1) || '0.0'} ({selectedBook.reviewCount} reviews)</span>
                     <span className="badge badge-gray"><Icon src={ICONS.dl} alt="" size={12} style={{ marginRight: 3 }} />{selectedBook.totalBorrows} borrows</span>
@@ -269,6 +276,37 @@ export default function BookCatalogue() {
                 </div>
               </div>
 
+              {/* Borrowing Duration Selector */}
+              {selectedBook.availableCopies > 0 && (
+                <div style={{ background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+                  <label style={{ fontWeight: 600, fontSize: '0.875rem', color: '#334155', display: 'block', marginBottom: 8 }}>
+                    <Icon src={ICONS.calendar} alt="" size={14} style={{ marginRight: 6 }} />Select Borrowing Duration
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: 8 }}>
+                    {[7, 14, 21, 30].map(days => (
+                      <button
+                        key={days}
+                        type="button"
+                        onClick={() => setBorrowingDays(days)}
+                        style={{
+                          padding: '8px 12px',
+                          border: borrowingDays === days ? '2px solid #1a56db' : '1px solid #cbd5e1',
+                          background: borrowingDays === days ? '#dbeafe' : 'white',
+                          borderRadius: 8,
+                          cursor: 'pointer',
+                          fontWeight: 600,
+                          fontSize: '0.875rem',
+                          color: borrowingDays === days ? '#1a56db' : '#475569',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        {days} days
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Borrow button */}
               {selectedBook.availableCopies > 0 && (
                 <button
@@ -277,7 +315,7 @@ export default function BookCatalogue() {
                   onClick={() => handleBorrow(selectedBook._id)}
                   disabled={borrowing}
                 >
-                  {borrowing ? 'Processing...' : <><Icon src={ICONS.book} alt="" size={16} style={{ marginRight: 6 }} />Borrow This Book (14 days)</>}
+                  {borrowing ? 'Processing...' : <><Icon src={ICONS.book} alt="" size={16} style={{ marginRight: 6 }} />Borrow This Book ({borrowingDays} days)</>}
                 </button>
               )}
 
@@ -293,8 +331,8 @@ export default function BookCatalogue() {
                     <div style={{ display: 'flex', gap: 4 }}>
                       {[1,2,3,4,5].map(s => (
                         <button type="button" key={s} onClick={() => setReviewForm(f => ({ ...f, rating: s }))}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 24, color: s <= reviewForm.rating ? '#f59e0b' : '#cbd5e1' }}>
-                          ★
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: s <= reviewForm.rating ? '#f59e0b' : '#cbd5e1' }}>
+                        <Icon src={ICONS.star} alt="" size={20} style={{ filter: s <= reviewForm.rating ? 'none' : 'grayscale(1) opacity(0.3)', marginRight: 4 }} />
                         </button>
                       ))}
                       <span style={{ marginLeft: 8, fontSize: '0.875rem', color: '#64748b', alignSelf: 'center' }}>{reviewForm.rating}/5</span>
@@ -308,7 +346,7 @@ export default function BookCatalogue() {
                     style={{ marginBottom: 10 }}
                   />
                   <button type="submit" className="btn btn-primary btn-sm" disabled={reviewLoading}>
-                    {reviewLoading ? '...' : '✓ Submit Review'}
+                    {reviewLoading ? '...' : <><Icon src={ICONS.check} alt="" size={14} style={{ marginRight: 4 }} />Submit Review</>}
                   </button>
                 </form>
                 {reviews.length === 0 ? (
@@ -323,15 +361,18 @@ export default function BookCatalogue() {
                           <div className="review-avatar">{r.user?.name?.[0]?.toUpperCase() || 'U'}</div>
                           <div>
                             <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{r.user?.name || 'Anonymous'}</div>
-                            <div style={{ display: 'flex', gap: 1 }}>
-                              {[1,2,3,4,5].map(s => <span key={s} style={{ color: s <= r.rating ? '#f59e0b' : '#e2e8f0', fontSize: 13 }}>★</span>)}
+                            <div style={{ display: 'flex', gap: 2, marginTop: 4 }}>
+                              {[1,2,3,4,5].map(s => <i key={s} className={`fi ${s <= r.rating ? 'fi-sr-star' : 'fi-rr-star'}`} style={{ color: s <= r.rating ? '#f59e0b' : '#cbd5e1', fontSize: 13 }}></i>)}
                             </div>
                           </div>
                           <div style={{ marginLeft: 'auto', fontSize: '0.75rem', color: '#94a3b8' }}>
                             {new Date(r.createdAt).toLocaleDateString('en-IN')}
                           </div>
                         </div>
-                        <p style={{ fontSize: '0.875rem', color: '#475569', marginLeft: 42 }}>{r.comment}</p>
+                        <p style={{ fontSize: '0.875rem', color: '#475569', marginLeft: 42, marginBottom: 8 }}>{r.comment}</p>
+                        <div style={{ marginLeft: 42, fontSize: '0.78rem', color: '#64748b' }}>
+                          Reviewed by <strong>{r.user?.name || 'Anonymous'}</strong>
+                        </div>
                       </div>
                     ))}
                   </div>

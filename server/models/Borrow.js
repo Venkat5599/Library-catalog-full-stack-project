@@ -5,11 +5,13 @@ const borrowSchema = new mongoose.Schema({
   book: { type: mongoose.Schema.Types.ObjectId, ref: 'Book', required: true },
   borrowDate: { type: Date, default: Date.now },
   dueDate: { type: Date, required: true },
+  borrowingDays: { type: Number, default: 14 },
   returnDate: { type: Date },
   status: { type: String, enum: ['borrowed', 'returned', 'overdue'], default: 'borrowed' },
   fine: { type: Number, default: 0 },
   finePaid: { type: Boolean, default: false },
   renewCount: { type: Number, default: 0 },
+  renewalDays: { type: Number, default: 14 },
   notes: { type: String, default: '' }
 }, { timestamps: true });
 

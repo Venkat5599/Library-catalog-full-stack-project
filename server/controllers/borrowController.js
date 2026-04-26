@@ -1,11 +1,17 @@
 const Borrow = require('../models/Borrow');
 const Book = require('../models/Book');
 const User = require('../models/User');
+const Review = require('../models/Review');
 
 exports.borrowBook = async (req, res, next) => {
   try {
-    const { bookId } = req.body;
+    const { bookId, borrowingDays = 14 } = req.body;
     const userId = req.user._id;
+
+    // Validate borrowing days (7-30 days)
+    if (borrowingDays < 7 || borrowingDays > 30) {
+      return res.status(400).json({ message: 'Borrowing duration must be between 7 and 30 days' });
+    }
 
     const book = await Book.findById(bookId);
     if (!book) return res.status(404).json({ message: 'Book not found' });
@@ -18,9 +24,9 @@ exports.borrowBook = async (req, res, next) => {
     if (user.currentBorrows >= 5) return res.status(400).json({ message: 'Borrow limit reached (max 5 books)' });
 
     const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 14);
+    dueDate.setDate(dueDate.getDate() + borrowingDays);
 
-    const borrow = await Borrow.create({ user: userId, book: bookId, dueDate });
+    const borrow = await Borrow.create({ user: userId, book: bookId, dueDate, borrowingDays });
 
     book.availableCopies -= 1;
     book.totalBorrows += 1;
@@ -37,6 +43,7 @@ exports.borrowBook = async (req, res, next) => {
 
 exports.returnBook = async (req, res, next) => {
   try {
+    const { rating, comment } = req.body;
     const borrow = await Borrow.findById(req.params.borrowId).populate('book');
     if (!borrow) return res.status(404).json({ message: 'Borrow record not found' });
     if (borrow.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
@@ -58,19 +65,38 @@ exports.returnBook = async (req, res, next) => {
     if (borrow.fine > 0) user.finesDue += borrow.fine;
     await user.save();
 
-    res.json({ message: 'Book returned successfully', borrow, fine: borrow.fine });
+    let reviewAdded = false;
+    if (rating && Number(rating) >= 1 && Number(rating) <= 5) {
+      const existingReview = await Review.findOne({ user: req.user._id, book: book._id });
+      if (!existingReview) {
+        await Review.create({ user: req.user._id, book: book._id, rating: Number(rating), comment: (comment || '').trim(), isVerified: true });
+        const reviews = await Review.find({ book: book._id });
+        const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+        await Book.findByIdAndUpdate(book._id, { averageRating: Math.round(avg * 10) / 10, reviewCount: reviews.length });
+        reviewAdded = true;
+      }
+    }
+
+    res.json({ message: 'Book returned successfully', borrow, fine: borrow.fine, reviewAdded });
   } catch (err) { next(err); }
 };
 
 exports.renewBook = async (req, res, next) => {
   try {
+    const { renewalDays = 14 } = req.body;
     const borrow = await Borrow.findById(req.params.borrowId);
     if (!borrow) return res.status(404).json({ message: 'Borrow record not found' });
     if (borrow.user.toString() !== req.user._id.toString()) return res.status(403).json({ message: 'Access denied' });
     if (borrow.status !== 'borrowed') return res.status(400).json({ message: 'Cannot renew this borrow' });
     if (borrow.renewCount >= 2) return res.status(400).json({ message: 'Maximum renewals reached' });
 
-    borrow.dueDate = new Date(borrow.dueDate.getTime() + 14 * 24 * 60 * 60 * 1000);
+    // Validate renewal days (7-30 days)
+    if (renewalDays < 7 || renewalDays > 30) {
+      return res.status(400).json({ message: 'Renewal duration must be between 7 and 30 days' });
+    }
+
+    borrow.dueDate = new Date(borrow.dueDate.getTime() + renewalDays * 24 * 60 * 60 * 1000);
+    borrow.renewalDays = renewalDays;
     borrow.renewCount += 1;
     await borrow.save();
 
@@ -85,7 +111,7 @@ exports.getMyBorrows = async (req, res, next) => {
     if (status) query.status = status;
 
     const borrows = await Borrow.find(query)
-      .populate('book', 'title author coverImage isbn category')
+      .populate('book', 'title author coverImage isbn category publisher totalCopies availableCopies')
       .sort({ borrowDate: -1 });
 
     // Update overdue status

@@ -22,13 +22,27 @@ app.use(
 ========================= */
 const allowedOrigins = [
   "http://localhost:3000",
+  "http://localhost:5000",
   "https://your-vercel-app.vercel.app" // 🔁 replace after deploy
 ];
+
+const isProduction = process.env.NODE_ENV === "production";
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      // In development, be more permissive
+      if (!isProduction) {
+        return callback(null, true);
+      }
+
+      // In production, strictly check allowed origins
+      if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error("CORS not allowed"));

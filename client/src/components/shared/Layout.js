@@ -3,24 +3,28 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
-const Icon = ({ src, alt = '', size = 18, style = {} }) => (
-  <img src={src} alt={alt} width={size} height={size} style={{ display: 'inline-block', verticalAlign: 'middle', ...style }} />
-);
+const Icon = ({ src, alt = '', size = 18, style = {} }) => {
+  if (src && src.startsWith('http')) {
+    return <img src={src} alt={alt} width={size} height={size} style={{ display: 'inline-block', verticalAlign: 'middle', ...style }} />
+  }
+  return <i className={`fi ${src}`} style={{ fontSize: size, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, ...style }} title={alt}></i>
+};
 
 const ICONS = {
-  dashboard:  'https://cdn-icons-png.flaticon.com/512/1828/1828791.png',
-  books:      'https://cdn-icons-png.flaticon.com/512/2232/2232688.png',
-  members:    'https://cdn-icons-png.flaticon.com/512/681/681494.png',
-  borrows:    'https://cdn-icons-png.flaticon.com/512/2965/2965395.png',
-  home:       'https://cdn-icons-png.flaticon.com/512/1946/1946436.png',
-  catalog:    'https://cdn-icons-png.flaticon.com/512/2232/2232688.png',
-  myBorrows:  'https://cdn-icons-png.flaticon.com/512/2991/2991112.png',
-  brand:      'https://cdn-icons-png.flaticon.com/512/2232/2232688.png',
-  calendar:   'https://cdn-icons-png.flaticon.com/512/747/747310.png',
-  adminKey:   'https://cdn-icons-png.flaticon.com/512/3064/3064197.png',
-  memberCard: 'https://cdn-icons-png.flaticon.com/512/1077/1077063.png',
-  logout:     'https://cdn-icons-png.flaticon.com/512/1828/1828479.png',
-  menu:       'https://cdn-icons-png.flaticon.com/512/2948/2948082.png',
+  menu:       'fi-rr-menu-burger',
+  close:      'fi-rr-cross',
+  logout:     'fi-rr-sign-out-alt',
+  dashboard:  'fi-rr-apps',
+  books:      'fi-rr-books',
+  members:    'fi-rr-users',
+  borrows:    'fi-rr-book-alt',
+  home:       'fi-rr-home',
+  catalog:    'fi-rr-search-alt',
+  myBorrows:  'fi-rr-book-alt',
+  brand:      'fi-rr-books',
+  calendar:   'fi-rr-calendar',
+  adminKey:   'fi-rr-key',
+  memberCard: 'fi-rr-id-badge',
 };
 
 const adminNav = [
@@ -88,7 +92,7 @@ export default function Layout({ children }) {
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
 
         {/* Close button — only visible on tablet/mobile inside drawer */}
-        <div className="sidebar-close-btn" onClick={() => setSidebarOpen(false)}>✕</div>
+        <div className="sidebar-close-btn" onClick={() => setSidebarOpen(false)}><Icon src={ICONS.close} alt="Close" size={20} /></div>
 
         <div className="sidebar-brand">
           <div className="brand-icon"><Icon src={ICONS.brand} alt="Library" size={26} /></div>

@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API = axios.create({ baseURL: '/api' });
+const API = axios.create({ 
+  baseURL: process.env.NODE_ENV === 'production' ? 'http://localhost:5000/api' : '/api' 
+});
 
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
@@ -33,8 +35,8 @@ export const authAPI = {
 export const booksAPI = {
   getAll: (params) => API.get('/books', { params }),
   getById: (id) => API.get(`/books/${id}`),
-  create: (data) => API.post('/books', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  update: (id, data) => API.put(`/books/${id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  create: (data) => API.post('/books', data),
+  update: (id, data) => API.put(`/books/${id}`, data),
   delete: (id) => API.delete(`/books/${id}`),
   getFeatured: () => API.get('/books/featured'),
   getPopular: () => API.get('/books/popular'),
@@ -43,9 +45,9 @@ export const booksAPI = {
 
 // Borrows
 export const borrowsAPI = {
-  borrow: (bookId) => API.post('/borrows', { bookId }),
-  return: (borrowId) => API.put(`/borrows/return/${borrowId}`),
-  renew: (borrowId) => API.put(`/borrows/renew/${borrowId}`),
+  borrow: (bookId, borrowingDays = 14) => API.post('/borrows', { bookId, borrowingDays }),
+  return: (borrowId, body = {}) => API.put(`/borrows/return/${borrowId}`, body),
+  renew: (borrowId, renewalDays = 14) => API.put(`/borrows/renew/${borrowId}`, { renewalDays }),
   getMyBorrows: (params) => API.get('/borrows/my-borrows', { params }),
   getAll: (params) => API.get('/borrows', { params }),
   payFine: (borrowId) => API.put(`/borrows/fine/${borrowId}/pay`),

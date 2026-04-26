@@ -11,11 +11,27 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
     if (token && storedUser) {
-      setUser(JSON.parse(storedUser));
-      authAPI.getMe()
-        .then(res => { setUser(res.data.user); localStorage.setItem('user', JSON.stringify(res.data.user)); })
-        .catch(() => { localStorage.removeItem('token'); localStorage.removeItem('user'); setUser(null); })
-        .finally(() => setLoading(false));
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        authAPI.getMe()
+          .then(res => { 
+            setUser(res.data.user); 
+            localStorage.setItem('user', JSON.stringify(res.data.user)); 
+          })
+          .catch(() => { 
+            localStorage.removeItem('token'); 
+            localStorage.removeItem('user'); 
+            setUser(null); 
+          })
+          .finally(() => setLoading(false));
+      } catch (error) {
+        console.error('Failed to parse stored user data:', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+        setLoading(false);
+      }
     } else {
       setLoading(false);
     }
@@ -24,10 +40,16 @@ export const AuthProvider = ({ children }) => {
   const login = useCallback(async (email, password) => {
     const res = await authAPI.login({ email, password });
     const { token, user } = res.data;
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(user));
-    setUser(user);
-    return user;
+    try {
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      setUser(user);
+      return user;
+    } catch (error) {
+      console.error('Failed to store login data:', error);
+      setUser(user); // Still set user in state even if localStorage fails
+      return user;
+    }
   }, []);
 
   const register = useCallback(async (data) => {
@@ -48,7 +70,11 @@ export const AuthProvider = ({ children }) => {
 
   const updateUser = useCallback((updatedUser) => {
     setUser(updatedUser);
-    localStorage.setItem('user', JSON.stringify(updatedUser));
+    try {
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+    } catch (error) {
+      console.error('Failed to store user data:', error);
+    }
   }, []);
 
   return (

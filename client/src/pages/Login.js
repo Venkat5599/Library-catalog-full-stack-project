@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import ShapeGrid from '../components/ShapeGrid';
 
 const Icon = ({ src, alt = '', size = 20, style = {} }) => (
   <img src={src} alt={alt} width={size} height={size} style={{ display: 'inline-block', verticalAlign: 'middle', ...style }} />
@@ -50,11 +51,37 @@ export default function Login() {
     toast('Admin credentials filled!', { icon: '✅', duration: 2000 });
   };
 
+  const fillUser = () => {
+    setForm({ email: 'alice@example.com', password: 'password123' });
+    toast('User credentials filled!', { icon: '👤', duration: 2000 });
+  };
+
   return (
     <div className="auth-page">
       {/* Left Panel */}
       <div className="auth-left">
-        <div className="auth-left-content">
+        {/* Animated Background */}
+        <div style={{ 
+          position: 'absolute', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          bottom: 0, 
+          zIndex: 1,
+          opacity: 0.3
+        }}>
+          <ShapeGrid 
+            speed={0.5}
+            squareSize={40}
+            direction="diagonal"
+            borderColor="rgba(255, 255, 255, 0.1)"
+            hoverFillColor="rgba(255, 255, 255, 0.05)"
+            shape="square"
+            hoverTrailAmount={0}
+          />
+        </div>
+        
+        <div className="auth-left-content" style={{ position: 'relative', zIndex: 2 }}>
           <div className="auth-brand">
             <div className="auth-brand-icon"><Icon src={ICONS.brand} alt="Library" size={40} /></div>
             <h1>Library<span>Catalog</span></h1>
@@ -164,31 +191,61 @@ export default function Login() {
         </p>
 
         {/* Demo credentials — click to auto-fill */}
-        <div
-          className="admin-hint"
-          onClick={fillAdmin}
-          style={{ cursor: 'pointer', userSelect: 'none' }}
-          title="Click to auto-fill admin credentials"
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
-            <Icon src={ICONS.admin} alt="Admin" size={15} />
-            <strong>Demo Admin Credentials</strong>
-            <span style={{ marginLeft: 'auto', fontSize: '0.7rem', background: '#bfdbfe', color: '#1a56db', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>
-              Tap to fill
-            </span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {/* Admin Credentials */}
+          <div
+            className="admin-hint"
+            onClick={fillAdmin}
+            style={{ cursor: 'pointer', userSelect: 'none' }}
+            title="Click to auto-fill admin credentials"
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
+              <Icon src={ICONS.admin} alt="Admin" size={15} />
+              <strong>Demo Admin Credentials</strong>
+              <span style={{ marginLeft: 'auto', fontSize: '0.7rem', background: '#bfdbfe', color: '#1a56db', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>
+                Tap to fill
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: '0.8rem' }}>
+              <span style={{ fontFamily: 'monospace', background: '#dbeafe', padding: '2px 8px', borderRadius: 5, color: '#1e40af' }}>
+                admin@library.com
+              </span>
+              <span style={{ color: '#94a3b8' }}>/</span>
+              <span style={{ fontFamily: 'monospace', background: '#dbeafe', padding: '2px 8px', borderRadius: 5, color: '#1e40af' }}>
+                admin123
+              </span>
+            </div>
+            <div style={{ marginTop: 8, fontSize: '0.76rem', color: '#64748b' }}>
+              Full access to admin dashboard, user management, and book management
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: '0.8rem' }}>
-            <span style={{ fontFamily: 'monospace', background: '#dbeafe', padding: '2px 8px', borderRadius: 5, color: '#1e40af' }}>
-              admin@library.com
-            </span>
-            <span style={{ color: '#94a3b8' }}>/</span>
-            <span style={{ fontFamily: 'monospace', background: '#dbeafe', padding: '2px 8px', borderRadius: 5, color: '#1e40af' }}>
-              admin123
-            </span>
-          </div>
-          <div style={{ marginTop: 8, fontSize: '0.76rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: 5 }}>
-            <Icon src={ICONS.user} alt="" size={12} />
-            <strong>Member:</strong> Register a new account to get started
+
+          {/* User Credentials */}
+          <div
+            className="admin-hint"
+            onClick={fillUser}
+            style={{ cursor: 'pointer', userSelect: 'none', background: '#f0fdf4', border: '1px solid #bbf7d0' }}
+            title="Click to auto-fill user credentials"
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
+              <Icon src={ICONS.user} alt="User" size={15} />
+              <strong>Demo User Credentials</strong>
+              <span style={{ marginLeft: 'auto', fontSize: '0.7rem', background: '#bbf7d0', color: '#15803d', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>
+                Tap to fill
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: '0.8rem' }}>
+              <span style={{ fontFamily: 'monospace', background: '#dcfce7', padding: '2px 8px', borderRadius: 5, color: '#166534' }}>
+                alice@example.com
+              </span>
+              <span style={{ color: '#94a3b8' }}>/</span>
+              <span style={{ fontFamily: 'monospace', background: '#dcfce7', padding: '2px 8px', borderRadius: 5, color: '#166534' }}>
+                password123
+              </span>
+            </div>
+            <div style={{ marginTop: 8, fontSize: '0.76rem', color: '#64748b' }}>
+              Browse books, borrow/return, write reviews, and manage personal library
+            </div>
           </div>
         </div>
       </div>

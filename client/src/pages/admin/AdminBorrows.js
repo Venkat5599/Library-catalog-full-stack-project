@@ -9,7 +9,8 @@ const Icon = ({ src, alt = '', size = 18, style = {} }) => (
 const ICONS = {
   book:    'https://cdn-icons-png.flaticon.com/512/2991/2991112.png',
   warning: 'https://cdn-icons-png.flaticon.com/512/2797/2797387.png',
-  check:   'https://cdn-icons-png.flaticon.com/512/5290/5290058.png',
+  check:   'https://cdn-icons-png.flaticon.com/512/3143/3143615.png',
+  close:   'https://cdn-icons-png.flaticon.com/512/1828/1828774.png',
   list:    'https://cdn-icons-png.flaticon.com/512/3480/3480292.png',
   refresh: 'https://cdn-icons-png.flaticon.com/512/2965/2965395.png',
   borrows: 'https://cdn-icons-png.flaticon.com/512/2965/2965395.png',
@@ -187,7 +188,7 @@ export default function AdminBorrows() {
                         {borrow.fine > 0 ? (
                           <div>
                             <span className={`badge ${borrow.finePaid ? 'badge-green' : 'badge-yellow'}`}>
-                              ₹{borrow.fine} {borrow.finePaid ? '✓ paid' : 'unpaid'}
+                              ₹{borrow.fine} {borrow.finePaid ? <><Icon src={ICONS.check} alt="" size={12} style={{ marginRight: 3 }} />paid</> : 'unpaid'}
                             </span>
                           </div>
                         ) : (

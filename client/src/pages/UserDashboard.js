@@ -3,23 +3,26 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { dashboardAPI, borrowsAPI } from '../services/api';
 import toast from 'react-hot-toast';
-
-const Icon = ({ src, alt = '', size = 20, style = {} }) => (
-  <img src={src} alt={alt} width={size} height={size} style={{ display: 'inline-block', verticalAlign: 'middle', ...style }} />
-);
-
 const ICONS = {
-  book:      'https://cdn-icons-png.flaticon.com/512/2991/2991112.png',
-  books:     'https://cdn-icons-png.flaticon.com/512/2232/2232688.png',
-  check:     'https://cdn-icons-png.flaticon.com/512/5290/5290058.png',
-  warning:   'https://cdn-icons-png.flaticon.com/512/2797/2797387.png',
-  money:     'https://cdn-icons-png.flaticon.com/512/2460/2460396.png',
-  search:    'https://cdn-icons-png.flaticon.com/512/622/622669.png',
-  refresh:   'https://cdn-icons-png.flaticon.com/512/2965/2965395.png',
-  lightning: 'https://cdn-icons-png.flaticon.com/512/3588/3588295.png',
-  info:      'https://cdn-icons-png.flaticon.com/512/151/151776.png',
-  id:        'https://cdn-icons-png.flaticon.com/512/1077/1077114.png',
-  calendar:  'https://cdn-icons-png.flaticon.com/512/747/747310.png',
+  book:      'fi-rr-book-alt',
+  books:     'fi-rr-books',
+  check:     'fi-rr-check-circle',
+  warning:   'fi-rr-triangle-warning',
+  money:     'fi-rr-coins',
+  search:    'fi-rr-search',
+  refresh:   'fi-rr-refresh',
+  lightning: 'fi-rr-bolt',
+  info:      'fi-rr-info',
+  id:        'fi-rr-id-badge',
+  calendar:  'fi-rr-calendar',
+  clock:     'fi-rr-time-fast',
+};
+
+const Icon = ({ src, alt = '', size = 20, style = {} }) => {
+  if (src && src.startsWith('http')) {
+    return <img src={src} alt={alt} width={size} height={size} style={{ display: 'inline-block', verticalAlign: 'middle', ...style }} />
+  }
+  return <i className={`fi ${src}`} style={{ fontSize: size, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, ...style }} title={alt}></i>
 };
 
 export default function UserDashboard() {
@@ -141,7 +144,7 @@ export default function UserDashboard() {
             <div className="stat-label">Overdue Books</div>
             {overdueBorrows.length > 0
               ? <div className="stat-change negative">Action needed!</div>
-              : <div className="stat-change positive">All clear ✓</div>}
+              : <div className="stat-change positive"><Icon src={ICONS.check} alt="" size={14} style={{ marginRight: 4 }} />All clear</div>}
           </div>
         </div>
         <div className="stat-card">
@@ -151,7 +154,7 @@ export default function UserDashboard() {
             <div className="stat-label">Outstanding Fines</div>
             {stats?.finesDue > 0
               ? <div className="stat-change negative">Pay at counter</div>
-              : <div className="stat-change positive">No dues ✓</div>}
+              : <div className="stat-change positive"><Icon src={ICONS.check} alt="" size={14} style={{ marginRight: 4 }} />No dues</div>}
           </div>
         </div>
       </div>
@@ -187,7 +190,7 @@ export default function UserDashboard() {
                     <div key={borrow._id} className="borrow-card" style={{ padding: '14px 16px' }}>
                       <div className="borrow-book-cover">
                         {borrow.book?.coverImage
-                          ? <img src={`http://localhost:5000${borrow.book.coverImage}`} alt={borrow.book.title} />
+                          ? <img src={borrow.book.coverImage.startsWith('http') ? borrow.book.coverImage : `http://localhost:5000${borrow.book.coverImage}`} alt={borrow.book.title} onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/150x220?text=No+Cover'; }} />
                           : <Icon src={ICONS.book} alt="Cover" size={30} />}
                       </div>
                       <div className="borrow-details">

@@ -2,30 +2,42 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { borrowsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
-const Icon = ({ src, alt = '', size = 18, style = {} }) => (
-  <img src={src} alt={alt} width={size} height={size} style={{ display: 'inline-block', verticalAlign: 'middle', ...style }} />
-);
-
-const ICONS = {
-  book:    'https://cdn-icons-png.flaticon.com/512/2991/2991112.png',
-  books:   'https://cdn-icons-png.flaticon.com/512/2232/2232688.png',
-  warning: 'https://cdn-icons-png.flaticon.com/512/2797/2797387.png',
-  check:   'https://cdn-icons-png.flaticon.com/512/5290/5290058.png',
-  list:    'https://cdn-icons-png.flaticon.com/512/3480/3480292.png',
-  refresh: 'https://cdn-icons-png.flaticon.com/512/2965/2965395.png',
-  money:   'https://cdn-icons-png.flaticon.com/512/2460/2460396.png',
-  calendar:'https://cdn-icons-png.flaticon.com/512/747/747310.png',
-  clock:   'https://cdn-icons-png.flaticon.com/512/2784/2784459.png',
+const Icon = ({ src, alt = '', size = 18, style = {} }) => {
+  if (src && src.startsWith('http')) {
+    return <img src={src} alt={alt} width={size} height={size} style={{ display: 'inline-block', verticalAlign: 'middle', ...style }} />
+  }
+  return <i className={`fi ${src}`} style={{ fontSize: size, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, ...style }} title={alt}></i>
 };
 
-const BOOK_ICONS = { Fiction: 'https://cdn-icons-png.flaticon.com/512/2991/2991112.png', 'Non-Fiction': 'https://cdn-icons-png.flaticon.com/512/2232/2232688.png', Science: 'https://cdn-icons-png.flaticon.com/512/2103/2103651.png', Technology: 'https://cdn-icons-png.flaticon.com/512/3281/3281289.png',
-  History: 'https://cdn-icons-png.flaticon.com/512/854/854874.png', Biography: 'https://cdn-icons-png.flaticon.com/512/1077/1077063.png', 'Self-Help': 'https://cdn-icons-png.flaticon.com/512/3588/3588295.png', Business: 'https://cdn-icons-png.flaticon.com/512/2942/2942909.png', Other: 'https://cdn-icons-png.flaticon.com/512/2232/2232688.png' };
+const ICONS = {
+  book:    'fi-rr-book-alt',
+  books:   'fi-rr-books',
+  warning: 'fi-rr-triangle-warning',
+  check:   'fi-rr-check-circle',
+  close:   'fi-rr-cross',
+  star:    'fi-sr-star',
+  list:    'fi-rr-list',
+  refresh: 'fi-rr-refresh',
+  money:   'fi-rr-coins',
+  calendar:'fi-rr-calendar',
+  clock:   'fi-rr-time-fast',
+};
+
+const BOOK_ICONS = { 
+  Fiction: 'fi-rr-book-alt', 'Non-Fiction': 'fi-rr-books', Science: 'fi-rr-microscope', Technology: 'fi-rr-laptop',
+  History: 'fi-rr-time-past', Biography: 'fi-rr-user', 'Self-Help': 'fi-rr-bulb', Business: 'fi-rr-briefcase', Other: 'fi-rr-books' 
+};
 
 export default function MyBorrows() {
   const [borrows, setBorrows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
   const [actionLoading, setActionLoading] = useState({});
+  const [renewModal, setRenewModal] = useState(null);
+  const [renewalDays, setRenewalDays] = useState(14);
+  const [returnModal, setReturnModal] = useState(null);
+  const [returnRating, setReturnRating] = useState(5);
+  const [returnComment, setReturnComment] = useState('');
 
   const fetchBorrows = useCallback(async () => {
     setLoading(true);
@@ -39,11 +51,20 @@ export default function MyBorrows() {
 
   useEffect(() => { fetchBorrows(); }, [fetchBorrows]);
 
-  const handleReturn = async (borrowId) => {
+  const handleReturnClick = (borrowId) => {
+    setReturnModal(borrowId);
+    setReturnRating(5);
+    setReturnComment('');
+  };
+
+  const handleReturnConfirm = async (borrowId, skipReview = false) => {
     setActionLoading(a => ({ ...a, [borrowId]: 'return' }));
     try {
-      const res = await borrowsAPI.return(borrowId);
+      const payload = skipReview ? {} : { rating: returnRating, comment: returnComment };
+      const res = await borrowsAPI.return(borrowId, payload);
       toast.success(`Returned! ${res.data.fine > 0 ? `Fine incurred: ₹${res.data.fine}` : 'No fine.'}`);
+      if (res.data.reviewAdded) toast.success('Thank you for your review!');
+      setReturnModal(null);
       fetchBorrows();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to return');
@@ -53,8 +74,9 @@ export default function MyBorrows() {
   const handleRenew = async (borrowId) => {
     setActionLoading(a => ({ ...a, [borrowId]: 'renew' }));
     try {
-      await borrowsAPI.renew(borrowId);
-      toast.success('Renewed for 14 more days!');
+      await borrowsAPI.renew(borrowId, renewalDays);
+      toast.success(`Renewed for ${renewalDays} more days!`);
+      setRenewModal(null);
       fetchBorrows();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to renew');
@@ -138,7 +160,7 @@ export default function MyBorrows() {
               <div key={borrow._id} className="borrow-card">
                 <div className="borrow-book-cover">
                     {borrow.book?.coverImage
-                      ? <img src={`http://localhost:5000${borrow.book.coverImage}`} alt={borrow.book.title} />
+                      ? <img src={borrow.book.coverImage.startsWith('http') ? borrow.book.coverImage : `http://localhost:5000${borrow.book.coverImage}`} alt={borrow.book.title} onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/150x220?text=No+Cover'; }} />
                       : <Icon src={BOOK_ICONS[borrow.book?.category] || ICONS.books} alt="cover" size={30} />}
                 </div>
                 <div className="borrow-details" style={{ flex: 1 }}>
@@ -165,7 +187,7 @@ export default function MyBorrows() {
                     )}
                     {isReturned && borrow.returnDate && (
                       <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                        ✓ Returned: <strong>{new Date(borrow.returnDate).toLocaleDateString('en-IN')}</strong>
+                        <Icon src={ICONS.check} alt="" size={13} style={{ marginRight: 4 }} />Returned: <strong>{new Date(borrow.returnDate).toLocaleDateString('en-IN')}</strong>
                       </span>
                     )}
                     {borrow.renewCount > 0 && (
@@ -173,13 +195,20 @@ export default function MyBorrows() {
                     )}
                   </div>
 
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10, marginTop: 10, fontSize: '0.82rem', color: '#475569' }}>
+                    {borrow.book?.publisher && (
+                      <div><strong>Publisher:</strong> {borrow.book.publisher}</div>
+                    )}
+                    <div><strong>Copies:</strong> {borrow.book?.availableCopies ?? 0}/{borrow.book?.totalCopies ?? 0}</div>
+                  </div>
+
                   {/* Fine */}
                   {borrow.fine > 0 && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, padding: '8px 12px', background: '#fffbeb', borderRadius: 8, border: '1px solid #fde68a' }}>
                       <span><Icon src={ICONS.money} alt="" size={14} style={{ marginRight: 4 }} /></span>
                       <span style={{ fontSize: '0.82rem', color: '#92400e' }}>
-                        Fine: <strong>₹{borrow.fine}</strong>
-                        {borrow.finePaid ? <span style={{ color: '#15803d', marginLeft: 6 }}>✓ Paid</span> : ''}
+                        <Icon src={ICONS.money} alt="" size={14} style={{ marginRight: 4 }} />Fine: <strong>₹{borrow.fine}</strong>
+                        {borrow.finePaid ? <span style={{ color: '#15803d', marginLeft: 6 }}><Icon src={ICONS.check} alt="" size={13} style={{ marginRight: 2 }} />Paid</span> : ''}
                       </span>
                       {!borrow.finePaid && isReturned && (
                         <button
@@ -199,7 +228,7 @@ export default function MyBorrows() {
                     <div className="borrow-actions">
                       <button
                         className="btn btn-success btn-sm"
-                        onClick={() => handleReturn(borrow._id)}
+                        onClick={() => handleReturnClick(borrow._id)}
                         disabled={!!actionLoading[borrow._id]}
                       >
                         {actionLoading[borrow._id] === 'return' ? '...' : ''}  Return Book
@@ -207,7 +236,10 @@ export default function MyBorrows() {
                       {borrow.renewCount < 2 && (
                         <button
                           className="btn btn-secondary btn-sm"
-                          onClick={() => handleRenew(borrow._id)}
+                          onClick={() => {
+                            setRenewModal(borrow._id);
+                            setRenewalDays(14);
+                          }}
                           disabled={!!actionLoading[borrow._id]}
                         >
                           {actionLoading[borrow._id] === 'renew' ? '...' : <Icon src={ICONS.refresh} alt="" size={14} style={{ marginRight: 4 }} />} Renew ({2 - borrow.renewCount} left)
@@ -219,6 +251,120 @@ export default function MyBorrows() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Renewal Modal */}
+      {renewModal && (
+        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setRenewModal(null); }}>
+          <div className="modal">
+            <div className="modal-header">
+              <div className="modal-title"><Icon src={ICONS.refresh} alt="" size={18} style={{ marginRight: 6 }} />Renew Book</div>
+              <button className="modal-close" onClick={() => setRenewModal(null)}><Icon src={ICONS.close} alt="" size={16} /></button>
+            </div>
+            <div className="modal-body">
+              <p style={{ color: '#64748b', marginBottom: 16 }}>Select how long you'd like to renew this book for:</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: 10, marginBottom: 20 }}>
+                {[7, 14, 21, 30].map(days => (
+                  <button
+                    key={days}
+                    type="button"
+                    onClick={() => setRenewalDays(days)}
+                    style={{
+                      padding: '12px 16px',
+                      border: renewalDays === days ? '2px solid #1a56db' : '1px solid #cbd5e1',
+                      background: renewalDays === days ? '#dbeafe' : 'white',
+                      borderRadius: 8,
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      fontSize: '0.875rem',
+                      color: renewalDays === days ? '#1a56db' : '#475569',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {days} days
+                  </button>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  className="btn btn-primary btn-full"
+                  onClick={() => handleRenew(renewModal)}
+                  disabled={actionLoading[renewModal] === 'renew'}
+                >
+                  {actionLoading[renewModal] === 'renew' ? 'Processing...' : 'Confirm Renewal'}
+                </button>
+                <button
+                  className="btn btn-outline btn-full"
+                  onClick={() => setRenewModal(null)}
+                  disabled={actionLoading[renewModal] === 'renew'}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {returnModal && (
+        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setReturnModal(null); }}>
+          <div className="modal">
+            <div className="modal-header">
+              <div className="modal-title"><Icon src={ICONS.check} alt="" size={18} style={{ marginRight: 6 }} />Return & Review</div>
+              <button className="modal-close" onClick={() => setReturnModal(null)}><Icon src={ICONS.close} alt="" size={16} /></button>
+            </div>
+            <div className="modal-body">
+              <p style={{ color: '#64748b', marginBottom: 16 }}>Please rate your reading experience before returning the book.</p>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 18 }}>
+                {[1, 2, 3, 4, 5].map(star => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setReturnRating(star)}
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 12,
+                      border: returnRating === star ? '2px solid #1a56db' : '1px solid #cbd5e1',
+                      background: returnRating === star ? '#dbeafe' : '#f8fafc',
+                      color: '#0f172a',
+                      cursor: 'pointer',
+                      fontSize: 22,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <Icon src={ICONS.star} alt="" size={24} style={{ filter: returnRating === star ? 'none' : 'grayscale(1) opacity(0.3)' }} />
+                  </button>
+                ))}
+              </div>
+              <textarea
+                className="form-input form-textarea"
+                placeholder="Add an optional comment..."
+                value={returnComment}
+                onChange={e => setReturnComment(e.target.value)}
+                style={{ marginBottom: 16 }}
+              />
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  className="btn btn-primary btn-full"
+                  onClick={() => handleReturnConfirm(returnModal)}
+                  disabled={actionLoading[returnModal] === 'return'}
+                >
+                  {actionLoading[returnModal] === 'return' ? 'Processing...' : 'Return Book & Submit Review'}
+                </button>
+                <button
+                  className="btn btn-outline btn-full"
+                  onClick={() => handleReturnConfirm(returnModal, true)}
+                  disabled={actionLoading[returnModal] === 'return'}
+                >
+                  Skip Review
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

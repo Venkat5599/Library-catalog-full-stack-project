@@ -19,6 +19,8 @@ const ICONS = {
   phone:    'https://cdn-icons-png.flaticon.com/512/0/191.png',
   calendar: 'https://cdn-icons-png.flaticon.com/512/747/747310.png',
   user:     'https://cdn-icons-png.flaticon.com/512/1077/1077063.png',
+  close:    'https://cdn-icons-png.flaticon.com/512/1828/1828774.png',
+  check:    'https://cdn-icons-png.flaticon.com/512/3143/3143615.png',
 };
 
 export default function AdminUsers() {
@@ -89,7 +91,7 @@ export default function AdminUsers() {
           />
         </div>
         {search && (
-          <button className="btn btn-outline btn-sm" onClick={() => { setSearch(''); setPage(1); }}>✕ Clear</button>
+          <button className="btn btn-outline btn-sm" onClick={() => { setSearch(''); setPage(1); }}><Icon src={ICONS.close} alt="" size={14} style={{ marginRight: 4 }} /> Clear</button>
         )}
       </div>
 
@@ -153,7 +155,7 @@ export default function AdminUsers() {
                     </td>
                     <td>
                       <span className={`badge ${user.isActive ? 'badge-green' : 'badge-red'}`}>
-                        {user.isActive ? '✓ Active' : '✗ Inactive'}
+                        {user.isActive ? <><Icon src={ICONS.check} alt="" size={13} style={{ marginRight: 4 }} />Active</> : <><Icon src={ICONS.close} alt="" size={13} style={{ marginRight: 4 }} />Inactive</>}
                       </span>
                     </td>
                     <td style={{ fontSize: '0.8rem', color: '#64748b' }}>
@@ -197,7 +199,7 @@ export default function AdminUsers() {
           <div className="modal">
             <div className="modal-header">
               <div className="modal-title"><Icon src={ICONS.user} alt="" size={16} style={{ marginRight: 6 }} />Member Details</div>
-              <button className="modal-close" onClick={() => setSelectedUser(null)}>✕</button>
+              <button className="modal-close" onClick={() => setSelectedUser(null)}><Icon src={ICONS.close} alt="" size={16} /></button>
             </div>
             <div className="modal-body">
               <div style={{ textAlign: 'center', marginBottom: 24 }}>
@@ -213,7 +215,7 @@ export default function AdminUsers() {
                 <div style={{ color: '#64748b', fontSize: '0.875rem' }}>{selectedUser.email}</div>
                 <div style={{ marginTop: 8 }}>
                   <span className={`badge ${selectedUser.isActive ? 'badge-green' : 'badge-red'}`}>
-                    {selectedUser.isActive ? '✓ Active Member' : '✗ Inactive'}
+                    {selectedUser.isActive ? <><Icon src={ICONS.check} alt="" size={14} style={{ marginRight: 4 }} />Active Member</> : <><Icon src={ICONS.close} alt="" size={14} style={{ marginRight: 4 }} />Inactive</>}
                   </span>
                 </div>
               </div>

@@ -12,7 +12,7 @@ const ICONS = {
   members:  'https://cdn-icons-png.flaticon.com/512/681/681494.png',
   borrows:  'https://cdn-icons-png.flaticon.com/512/2965/2965395.png',
   warning:  'https://cdn-icons-png.flaticon.com/512/2797/2797387.png',
-  check:    'https://cdn-icons-png.flaticon.com/512/5290/5290058.png',
+  check:    'https://cdn-icons-png.flaticon.com/512/3143/3143615.png',
   chart:    'https://cdn-icons-png.flaticon.com/512/1828/1828791.png',
   category: 'https://cdn-icons-png.flaticon.com/512/3480/3480292.png',
   trophy:   'https://cdn-icons-png.flaticon.com/512/2917/2917995.png',
@@ -136,7 +136,7 @@ export default function AdminDashboard() {
             <div className="stat-label">Overdue Books</div>
             {stats?.overdueBorrows > 0
               ? <div className="stat-change negative">Needs attention!</div>
-              : <div className="stat-change positive">All on time ✓</div>}
+              : <div className="stat-change positive"><Icon src={ICONS.check} alt="" size={14} style={{ marginRight: 4 }} />All on time</div>}
           </div>
         </div>
         <div className="stat-card">

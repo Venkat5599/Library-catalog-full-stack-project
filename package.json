@@ -6,7 +6,9 @@
     "install-all": "npm install && cd server && npm install && cd ../client && npm install",
     "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm start\"",
     "start": "cd server && npm start",
-    "seed": "cd server && npm run seed"
+    "seed": "cd server && npm run seed",
+
+    "vercel-build": "cd client && npm install && npm run build"
   },
   "devDependencies": {
     "concurrently": "^8.0.1"
