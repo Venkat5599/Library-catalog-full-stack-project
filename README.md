@@ -2,6 +2,7 @@
 
 
 ## 🎥 Project Demo
+Click on the image for the video demo
 
 <p align="center">
   <a href="https://youtu.be/o4X8YpwEQWw">
