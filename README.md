@@ -1,5 +1,32 @@
 # 📚 Library Book Catalog - Full Stack MERN Application
 
+
+## 🎥 Project Demo
+
+<p align="center">
+  <a href="https://youtu.be/o4X8YpwEQWw">
+    <img src="https://img.youtube.com/vi/o4X8YpwEQWw/maxresdefault.jpg" width="600" alt="Watch Demo"/>
+  </a>
+</p>
+A full-featured **Library Management System** built using the **MERN Stack (MongoDB, Express.js, React.js, Node.js)** with a modern white & blue UI/UX design.
+
+---
+
+## 🚀 Quick Start
+
+### 📌 Prerequisites
+- Node.js v16+
+- MongoDB (Local / Atlas)
+
+---
+
+### 1️⃣ Install Dependencies
+
+```bash
+npm run install-all
+```
+
+Or manually:
 <div align="center">
 
 ![Library Management System](https://img.shields.io/badge/Library-Management%20System-blue?style=for-the-badge&logo=bookstack&logoColor=white)
